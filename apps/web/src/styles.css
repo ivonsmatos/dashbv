@@ -58,16 +58,30 @@ aside {
   display: grid;
   gap: 6px;
 }
-nav a {
+nav button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
   padding: 12px 14px;
   border-radius: 10px;
   color: #9cadc1;
   font-weight: 600;
-  cursor: default;
+  cursor: pointer;
 }
-nav a.active {
+nav button:hover,
+nav button:focus-visible {
+  color: white;
+  background: #102b49;
+  outline: none;
+}
+nav button.active {
   background: #173252;
   color: white;
+}
+.content > header[id],
+.panel[id] {
+  scroll-margin-top: 24px;
 }
 .aside-foot {
   margin-top: auto;
@@ -316,6 +330,22 @@ nav a.active {
 .table-panel {
   padding-bottom: 8px;
 }
+.import-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+.import-summary > div {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  background: #f4f7fb;
+  border-radius: 10px;
+}
+.import-summary strong {
+  font-size: 14px;
+}
 .table-wrap {
   overflow: auto;
 }
@@ -465,13 +495,12 @@ td:nth-child(4) {
 }
 @media (max-width: 1100px) {
   .app {
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 190px 1fr;
   }
   aside {
     padding: 25px 12px;
   }
   .logo span,
-  nav a:not(.active),
   .aside-foot small,
   .aside-foot span {
     display: none;
@@ -481,10 +510,6 @@ td:nth-child(4) {
   }
   .logo > b {
     min-width: 39px;
-  }
-  nav a.active {
-    font-size: 0;
-    text-align: center;
   }
   .kpis {
     grid-template-columns: repeat(2, 1fr);
@@ -537,6 +562,9 @@ td:nth-child(4) {
   .filters label {
     flex: 1;
     min-width: 130px;
+  }
+  .import-summary {
+    grid-template-columns: 1fr 1fr;
   }
   .filters select {
     min-width: 0;
