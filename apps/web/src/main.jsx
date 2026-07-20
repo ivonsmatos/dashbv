@@ -123,14 +123,19 @@ function Login({ onLogin }) {
   );
 }
 
-function KPI({ label, value, tone, sub }) {
+function KPI({ label, value, tone, sub, hint, trend }) {
   return (
     <article className={`kpi ${tone || ""}`}>
       <div className="kpi-top">
-        <span>{label}</span>
+        <span title={hint}>{label}</span>
         <i />
       </div>
       <strong>{value}</strong>
+      {trend && (
+        <em className={`trend ${trend.positive ? "positive" : "negative"}`}>
+          {trend.text}
+        </em>
+      )}
       <small>{sub}</small>
     </article>
   );
@@ -156,7 +161,7 @@ function Dashboard({ logout }) {
       ]);
       setData(d);
       setMeta(m);
-      setInsight(null);
+      analyze();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -311,6 +316,34 @@ function Dashboard({ logout }) {
       ],
     };
   }, [data]);
+  const grainWord =
+    { week: "semana", month: "mês", quarter: "trimestre", year: "ano" }[
+      filters.granularity
+    ] || "período";
+  const trend = useMemo(() => {
+    const t = data?.timeline;
+    if (!t || t.length < 2) return {};
+    const curr = t[t.length - 1];
+    const prev = t[t.length - 2];
+    const pctChange = (a, b) => (b ? ((a - b) / Math.abs(b)) * 100 : null);
+    const build = (value, goodWhenUp) => {
+      if (value == null || !isFinite(value)) return null;
+      const rising = value >= 0;
+      const positive = goodWhenUp ? rising : !rising;
+      return {
+        positive,
+        text: `${rising ? "↑" : "↓"} ${Math.abs(value).toFixed(0)}% vs ${grainWord} anterior`,
+      };
+    };
+    return {
+      revenue: build(pctChange(curr.revenue, prev.revenue), true),
+      expense: build(pctChange(curr.expense, prev.expense), false),
+      net: build(
+        pctChange(curr.revenue - curr.expense, prev.revenue - prev.expense),
+        true,
+      ),
+    };
+  }, [data, grainWord]);
   if (loading && !data)
     return <div className="loading">Carregando inteligência financeira…</div>;
   return (
@@ -360,6 +393,31 @@ function Dashboard({ logout }) {
             {data ? new Date(data.generatedAt).toLocaleString("pt-BR") : "—"}
           </div>
         </header>
+        {data && (
+          <p className="headline">
+            Neste recorte, entrou{" "}
+            <b className="pos">{money.format(data.kpis.revenue || 0)}</b> e
+            saiu <b className="neg">{money.format(data.kpis.expense || 0)}</b>{" "}
+            —{" "}
+            {data.kpis.net >= 0 ? (
+              <>
+                sobrou <b className="pos">{money.format(data.kpis.net)}</b>
+              </>
+            ) : (
+              <>
+                faltou{" "}
+                <b className="neg">{money.format(Math.abs(data.kpis.net))}</b>
+              </>
+            )}
+            .
+          </p>
+        )}
+        <p className="scope-hint">
+          <b>Área Geral</b> = despesas e receitas comuns a todo o
+          condomínio. <b>Edifício Boa Vista</b> = o que é específico do
+          prédio. A separação é automática, feita a partir do texto de cada
+          lançamento.
+        </p>
         <section className="filters">
           <label>
             De
@@ -378,7 +436,9 @@ function Dashboard({ logout }) {
             />
           </label>
           <label>
-            Centro de custo
+            <span title="Área Geral: custos e receitas comuns a todo o condomínio. Edifício Boa Vista: o que pertence só ao prédio.">
+              Centro de custo
+            </span>
             <select
               value={filters.scope || ""}
               onChange={(e) =>
@@ -392,7 +452,9 @@ function Dashboard({ logout }) {
             </select>
           </label>
           <label>
-            Fundo
+            <span title="Cada lançamento pode pertencer a um fundo específico, como Fundo de Reserva (poupança para emergências) ou Consolidado (caixa geral).">
+              Fundo
+            </span>
             <select
               value={filters.fund || ""}
               onChange={(e) => setFilters({ ...filters, fund: e.target.value })}
@@ -427,12 +489,16 @@ function Dashboard({ logout }) {
             value={money.format(data?.kpis.revenue || 0)}
             sub={`${data?.kpis.transactions || 0} lançamentos no recorte`}
             tone="positive"
+            hint="Tudo que entrou (pagamentos de condomínio, taxas etc.) no recorte selecionado."
+            trend={trend.revenue}
           />
           <KPI
             label="Despesas"
             value={money.format(data?.kpis.expense || 0)}
             sub="Saídas consolidadas"
             tone="negative"
+            hint="Tudo que saiu (contas, manutenção, serviços etc.) no recorte selecionado."
+            trend={trend.expense}
           />
           <KPI
             label="Resultado"
@@ -443,6 +509,8 @@ function Dashboard({ logout }) {
                 : "Déficit no período"
             }
             tone={data?.kpis.net >= 0 ? "positive" : "negative"}
+            hint="Receitas menos despesas. Positivo é sobra; negativo é déficit."
+            trend={trend.net}
           />
           <KPI
             label="Saldo final apurado"
@@ -452,6 +520,7 @@ function Dashboard({ logout }) {
                 : money.format(data.kpis.endingBalance)
             }
             sub="Saldo contábil consolidado"
+            hint="Valor em caixa/banco confirmado na última prestação de contas — não é a soma do recorte filtrado."
           />
         </section>
         <section className="grid">
@@ -479,11 +548,7 @@ function Dashboard({ logout }) {
             {!insight && (
               <div className="ai-empty">
                 <div>✦</div>
-                <p>
-                  Gere uma análise objetiva do período e centro de custo
-                  selecionados, com destaques, riscos e ações sugeridas.
-                </p>
-                <button onClick={analyze}>Analisar este recorte</button>
+                <p>Preparando a leitura automática deste recorte…</p>
               </div>
             )}
             {insight?.loading && (
@@ -512,6 +577,9 @@ function Dashboard({ logout }) {
                     <li key={x}>{x}</li>
                   ))}
                 </ul>
+                <button className="ai-refresh" onClick={analyze}>
+                  Atualizar leitura
+                </button>
               </div>
             )}
           </article>

@@ -147,6 +147,34 @@ nav button.active {
   background: #17c3b2;
   margin-right: 6px;
 }
+.headline {
+  background: linear-gradient(135deg, #eaf1ff, #e6faf6);
+  border: 1px solid #d6e4f5;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0d2a4a;
+}
+.headline b.pos {
+  color: #0f9d76;
+}
+.headline b.neg {
+  color: #d1483a;
+}
+.scope-hint {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #4a5b70;
+  background: #f4f7fb;
+  border-left: 3px solid #235cff;
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+}
+.scope-hint b {
+  color: #0d2a4a;
+}
 .filters {
   display: flex;
   gap: 12px;
@@ -163,6 +191,12 @@ nav button.active {
   font-size: 11px;
   color: #718096;
   font-weight: 700;
+}
+.kpi-top span[title],
+.filters label span[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
 }
 .filters input,
 .filters select {
@@ -235,6 +269,19 @@ nav button.active {
 }
 .kpi small {
   color: #8290a3;
+}
+.kpi em.trend {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  margin: -2px 0 5px;
+}
+.kpi em.trend.positive {
+  color: #0f9d76;
+}
+.kpi em.trend.negative {
+  color: #d1483a;
 }
 .grid {
   display: grid;
@@ -326,6 +373,17 @@ nav button.active {
 }
 .ai-result ul {
   padding-left: 18px;
+}
+.ai-refresh {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid #2c6c7e;
+  color: #9fe8de;
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
 }
 .table-panel {
   padding-bottom: 8px;
