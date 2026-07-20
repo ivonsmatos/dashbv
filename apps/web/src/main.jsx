@@ -137,6 +137,9 @@ function KPI({ label, value, tone, sub }) {
 }
 
 function Dashboard({ logout }) {
+  const [activeSection, setActiveSection] = useState(
+    window.location.hash.replace("#", "") || "visao-geral",
+  );
   const [filters, setFilters] = useState({ granularity: "month" });
   const [data, setData] = useState();
   const [meta, setMeta] = useState();
@@ -181,6 +184,13 @@ function Dashboard({ logout }) {
     } catch (e) {
       setInsight({ error: e.message });
     }
+  }
+  function navigateTo(section) {
+    setActiveSection(section);
+    window.history.replaceState(null, "", `#${section}`);
+    document
+      .getElementById(section)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   const timeline = useMemo(
     () => ({
@@ -313,10 +323,22 @@ function Dashboard({ logout }) {
           </span>
         </div>
         <nav>
-          <a className="active">Visão geral</a>
-          <a>Lançamentos</a>
-          <a>Importações</a>
-          <a>Agente financeiro</a>
+          {[
+            ["visao-geral", "Visão geral"],
+            ["lancamentos", "Lançamentos"],
+            ["importacoes", "Importações"],
+            ["agente-financeiro", "Agente financeiro"],
+          ].map(([section, label]) => (
+            <button
+              type="button"
+              key={section}
+              className={activeSection === section ? "active" : ""}
+              onClick={() => navigateTo(section)}
+              aria-current={activeSection === section ? "page" : undefined}
+            >
+              {label}
+            </button>
+          ))}
         </nav>
         <div className="aside-foot">
           <small>ÚLTIMA CARGA</small>
@@ -327,7 +349,7 @@ function Dashboard({ logout }) {
         </div>
       </aside>
       <main className="content">
-        <header>
+        <header id="visao-geral">
           <div>
             <small>PAINEL FINANCEIRO</small>
             <h1>Visão geral</h1>
@@ -446,7 +468,7 @@ function Dashboard({ logout }) {
             </div>
             <Chart option={timeline} />
           </article>
-          <article className="panel ai">
+          <article className="panel ai" id="agente-financeiro">
             <div className="panel-title">
               <div>
                 <small>AGENTE FINANCEIRO</small>
@@ -511,7 +533,7 @@ function Dashboard({ logout }) {
             </div>
             <Chart option={scopeChart} />
           </article>
-          <article className="panel table-panel full">
+          <article className="panel table-panel full" id="lancamentos">
             <div className="panel-title">
               <div>
                 <small>AUDITORIA</small>
@@ -556,6 +578,43 @@ function Dashboard({ logout }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </article>
+          <article className="panel import-panel full" id="importacoes">
+            <div className="panel-title">
+              <div>
+                <small>ATUALIZAÇÃO DOS DADOS</small>
+                <h2>Importações</h2>
+              </div>
+              <span>
+                {meta?.lastImport?.status === "success"
+                  ? "Carga concluída"
+                  : meta?.lastImport?.status || "Sem carga registrada"}
+              </span>
+            </div>
+            <div className="import-summary">
+              <div>
+                <small>ÚLTIMA EXECUÇÃO</small>
+                <strong>
+                  {meta?.lastImport?.finished_at
+                    ? new Date(meta.lastImport.finished_at).toLocaleString(
+                        "pt-BR",
+                      )
+                    : "—"}
+                </strong>
+              </div>
+              <div>
+                <small>ARQUIVOS NO RECORTE</small>
+                <strong>{data?.coverage.source_files || 0}</strong>
+              </div>
+              <div>
+                <small>LINHAS IMPORTADAS</small>
+                <strong>{meta?.lastImport?.rows_imported || 0}</strong>
+              </div>
+              <div>
+                <small>ORIGEM</small>
+                <strong>Pasta doc · PDFs</strong>
+              </div>
             </div>
           </article>
         </section>
