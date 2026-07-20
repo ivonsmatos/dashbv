@@ -13,6 +13,7 @@ var/
 _debug_artifacts/
 *.log
 .wrangler/
+.deploy/
 /assets/
 /automation/
 /index.html

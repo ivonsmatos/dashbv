@@ -6,6 +6,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import crypto from 'node:crypto';
 import { migrate, seedIfEmpty, pool } from './db.js';
 import { dashboard, transactions } from './dashboard.js';
+import { authenticate, seedAdmin } from './auth.js';
 
 const app=Fastify({ logger:true, trustProxy:true, bodyLimit:1_000_000 });
 const origins=(process.env.ALLOWED_ORIGINS||'http://localhost:5173').split(',').map(x=>x.trim());
@@ -14,7 +15,6 @@ await app.register(helmet,{ contentSecurityPolicy:false });
 await app.register(rateLimit,{ max:120,timeWindow:'1 minute' });
 const secret=new TextEncoder().encode(process.env.JWT_SECRET || 'development-secret-change-me');
 
-function safeEqual(a,b){ const aa=Buffer.from(a||''),bb=Buffer.from(b||''); return aa.length===bb.length && crypto.timingSafeEqual(aa,bb); }
 async function auth(req,reply){
   const token=req.headers.authorization?.replace(/^Bearer\s+/i,'');
   if(!token) return reply.code(401).send({error:'Não autenticado'});
@@ -24,8 +24,9 @@ async function auth(req,reply){
 app.get('/api/health',async()=>{ await pool.query('SELECT 1'); return {status:'ok',time:new Date().toISOString()}; });
 app.post('/api/auth/login',{config:{rateLimit:{max:8,timeWindow:'15 minutes'}}},async(req,reply)=>{
   const {email,password}=req.body||{};
-  if(!safeEqual(email,process.env.ADMIN_EMAIL)||!safeEqual(password,process.env.ADMIN_PASSWORD)) return reply.code(401).send({error:'Credenciais inválidas'});
-  const token=await new SignJWT({email,role:'admin'}).setProtectedHeader({alg:'HS256'}).setIssuer('dashbv').setIssuedAt().setExpirationTime('8h').sign(secret);
+  const user=await authenticate(email,password);
+  if(!user) return reply.code(401).send({error:'Credenciais inválidas'});
+  const token=await new SignJWT({sub:String(user.id),email:user.email,role:user.role}).setProtectedHeader({alg:'HS256'}).setIssuer('dashbv').setIssuedAt().setExpirationTime('8h').sign(secret);
   return {token,expiresIn:28800};
 });
 app.get('/api/dashboard',{preHandler:auth},async req=>dashboard(req.query));
@@ -49,6 +50,5 @@ app.post('/api/insights',{preHandler:auth,config:{rateLimit:{max:10,timeWindow:'
   return content;
 });
 
-await migrate(); await seedIfEmpty();
+await migrate(); await seedAdmin(); await seedIfEmpty();
 await app.listen({host:'0.0.0.0',port:Number(process.env.PORT)||3000});
-
