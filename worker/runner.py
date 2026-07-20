@@ -34,6 +34,8 @@ def import_csv(conn):
     with conn.cursor() as cur:
         cur.execute("INSERT INTO import_runs(status,files_seen) VALUES('running',%s) RETURNING id", (len(pdf_state()),))
         run_id = cur.fetchone()[0]
+        source_files = sorted({row["source_file"] for row in rows})
+        cur.execute("DELETE FROM transactions WHERE source_file = ANY(%s)", (source_files,))
         for ordinal, row in enumerate(rows):
             cur.execute("""INSERT INTO transactions
                 (occurred_at,kind,fund,category,description,amount,estimated_date,source_file,source_page,fingerprint)
