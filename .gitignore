@@ -5,6 +5,8 @@ dist/
 !.env.example
 doc/*.pdf
 data/
+server-data/
+backups/
 *.csv
 dashboard_data.json
 artifact.json
