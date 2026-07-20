@@ -1,0 +1,14 @@
+{
+  "name": "dashbv",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev:api": "npm --workspace @dashbv/api run dev",
+    "dev:web": "npm --workspace @dashbv/web run dev",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": { "node": ">=22.12" }
+}
+

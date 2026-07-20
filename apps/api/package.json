@@ -1,0 +1,16 @@
+{
+  "name": "@dashbv/api",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "dev": "node --watch src/server.js", "start": "node src/server.js", "test": "node --test" },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "csv-parse": "^6.1.0",
+    "fastify": "^5.6.2",
+    "jose": "^6.1.0",
+    "pg": "^8.16.3"
+  }
+}
+
