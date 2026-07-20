@@ -34,6 +34,15 @@ export async function migrate() {
       id bigserial PRIMARY KEY, started_at timestamptz NOT NULL DEFAULT now(), finished_at timestamptz,
       status text NOT NULL, files_seen integer DEFAULT 0, rows_imported integer DEFAULT 0, message text
     );
+    CREATE TABLE IF NOT EXISTS users (
+      id bigserial PRIMARY KEY,
+      email text UNIQUE NOT NULL,
+      password_hash text NOT NULL,
+      role text NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin','viewer')),
+      active boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      last_login_at timestamptz
+    );
   `);
 }
 
