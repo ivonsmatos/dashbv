@@ -14,12 +14,13 @@ export async function migrate() {
       fund text NOT NULL,
       category text NOT NULL,
       description text NOT NULL,
-      amount numeric(14,2) NOT NULL CHECK (amount >= 0),
+      amount numeric(14,2) NOT NULL,
       estimated_date boolean NOT NULL DEFAULT false,
       source_file text NOT NULL,
       source_page integer,
       fingerprint text UNIQUE NOT NULL
     );
+    ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_amount_check;
     CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(occurred_at);
     CREATE INDEX IF NOT EXISTS idx_transactions_kind_category ON transactions(kind, category);
     CREATE TABLE IF NOT EXISTS monthly_summaries (
@@ -44,19 +45,24 @@ export async function seedIfEmpty() {
   const count = Number((await pool.query('SELECT count(*) n FROM transactions')).rows[0].n);
   const path = process.env.SEED_CSV;
   if (count || !path || !fs.existsSync(path)) return;
-  const rows = parse(fs.readFileSync(path), { columns: true, skip_empty_lines: true });
+  const rows = parse(fs.readFileSync(path), { columns: true, skip_empty_lines: true, bom: true });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    for (const [ordinal, r] of rows.entries()) {
+    for (let offset=0; offset<rows.length; offset+=500) {
+      const batch=rows.slice(offset,offset+500); const values=[];
+      const tuples=batch.map((r,index)=>{
+        const ordinal=offset+index; const base=index*10;
+        values.push(r.date,r.type,r.fund,r.category,r.description,r.amount,r.estimated_date==='True',r.source_file,Number(r.source_page)||null,fingerprint(r,ordinal));
+        return `(${Array.from({length:10},(_,i)=>`$${base+i+1}`).join(',')})`;
+      });
       await client.query(`INSERT INTO transactions
         (occurred_at,kind,fund,category,description,amount,estimated_date,source_file,source_page,fingerprint)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(fingerprint) DO NOTHING`,
-        [r.date,r.type,r.fund,r.category,r.description,r.amount,r.estimated_date==='True',r.source_file,Number(r.source_page)||null,fingerprint(r,ordinal)]);
+        VALUES ${tuples.join(',')} ON CONFLICT(fingerprint) DO NOTHING`,values);
     }
     const summaryPath = process.env.SEED_SUMMARY_CSV;
     if (summaryPath && fs.existsSync(summaryPath)) {
-      const summaries = parse(fs.readFileSync(summaryPath), { columns: true, skip_empty_lines: true });
+      const summaries = parse(fs.readFileSync(summaryPath), { columns: true, skip_empty_lines: true, bom: true });
       for (const r of summaries) await client.query(`INSERT INTO monthly_summaries
         (month,revenue,expense,net,ending_balance,source_file,balance_page) VALUES($1,$2,$3,$4,$5,$6,$7)
         ON CONFLICT(month) DO UPDATE SET revenue=excluded.revenue,expense=excluded.expense,net=excluded.net,
