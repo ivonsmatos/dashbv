@@ -231,6 +231,23 @@ nav button.active {
   color: #235cff;
   box-shadow: 0 1px 4px #c9d2df;
 }
+.apply-btn {
+  height: 36px;
+  padding: 0 18px;
+  margin-left: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #dfe5ec;
+  color: #97a3b3;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: default;
+}
+.apply-btn.dirty {
+  background: #235cff;
+  color: white;
+  cursor: pointer;
+}
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

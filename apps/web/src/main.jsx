@@ -146,6 +146,8 @@ function Dashboard({ logout }) {
     window.location.hash.replace("#", "") || "visao-geral",
   );
   const [filters, setFilters] = useState({ granularity: "month" });
+  const [draft, setDraft] = useState({ granularity: "month" });
+  const filtersDirty = JSON.stringify(draft) !== JSON.stringify(filters);
   const [data, setData] = useState();
   const [meta, setMeta] = useState();
   const [insight, setInsight] = useState();
@@ -423,16 +425,16 @@ function Dashboard({ logout }) {
             De
             <input
               type="date"
-              value={filters.from || ""}
-              onChange={(e) => setFilters({ ...filters, from: e.target.value })}
+              value={draft.from || ""}
+              onChange={(e) => setDraft({ ...draft, from: e.target.value })}
             />
           </label>
           <label>
             Até
             <input
               type="date"
-              value={filters.to || ""}
-              onChange={(e) => setFilters({ ...filters, to: e.target.value })}
+              value={draft.to || ""}
+              onChange={(e) => setDraft({ ...draft, to: e.target.value })}
             />
           </label>
           <label>
@@ -440,10 +442,8 @@ function Dashboard({ logout }) {
               Centro de custo
             </span>
             <select
-              value={filters.scope || ""}
-              onChange={(e) =>
-                setFilters({ ...filters, scope: e.target.value })
-              }
+              value={draft.scope || ""}
+              onChange={(e) => setDraft({ ...draft, scope: e.target.value })}
             >
               <option value="">Área Geral + Boa Vista</option>
               {meta?.scopes?.map((x) => (
@@ -456,8 +456,8 @@ function Dashboard({ logout }) {
               Fundo
             </span>
             <select
-              value={filters.fund || ""}
-              onChange={(e) => setFilters({ ...filters, fund: e.target.value })}
+              value={draft.fund || ""}
+              onChange={(e) => setDraft({ ...draft, fund: e.target.value })}
             >
               <option value="">Todos os fundos</option>
               {meta?.funds.map((x) => (
@@ -474,13 +474,21 @@ function Dashboard({ logout }) {
             ].map(([v, l]) => (
               <button
                 key={v}
-                className={filters.granularity === v ? "on" : ""}
-                onClick={() => setFilters({ ...filters, granularity: v })}
+                className={draft.granularity === v ? "on" : ""}
+                onClick={() => setDraft({ ...draft, granularity: v })}
               >
                 {l}
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className={`apply-btn${filtersDirty ? " dirty" : ""}`}
+            disabled={!filtersDirty}
+            onClick={() => setFilters(draft)}
+          >
+            Aplicar
+          </button>
         </section>
         {error && <div className="error banner">{error}</div>}
         <section className="kpis">
